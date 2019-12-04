@@ -5,25 +5,11 @@ enum Ins {
     Halt,
 }
 
-impl Ins {
-    fn num_values(&self) -> usize {
-        match self {
-            &Ins::Add(ref ops) => 1 + ops.num_values(),
-            &Ins::Mul(ref ops) => 1 + ops.num_values(),
-            &Ins::Halt => 1,
-        }
-    }
-}
-
 #[derive(Debug)]
 struct Operands {
     left: usize,
     right: usize,
     target: usize
-}
-
-impl Operands {
-    fn num_values(&self) -> usize { 3 }
 }
 
 fn parse_operands(program: &[usize], ip: usize) -> Operands {
@@ -50,39 +36,56 @@ fn apply_ins(program: &mut[usize], operands: Operands, reduce: fn(usize, usize) 
     program[operands.target] = reduce(left, right);
 }
 
-fn main() {
-    let input_str = include_str!("./input");
-    let input_program = input_str
-        .split(',')
-        .map(|s| { s.trim_end().parse::<usize>().unwrap() })
-        .collect::<Vec<_>>();
+fn run_program(program: &mut[usize]) {
+    let mut ip = 0;
+    loop {
+        let ins = parse_ins(&program, ip);
 
+        match ins {
+            Ins::Halt => break,
+            Ins::Add(operands) => apply_ins(program, operands, |a, b| a + b),
+            Ins::Mul(operands) => apply_ins(program, operands, |a, b| a * b),
+        }
+
+        ip += 4;
+    }
+}
+
+fn get_result_with_params(program: &mut[usize], noun: usize, verb: usize) -> usize {
+    program[1] = noun;
+    program[2] = verb;
+
+    run_program(program);
+
+    program[0]
+}
+
+fn part1(input_program: &Vec<usize>) {
+    let mut program = input_program.clone();
+    let result = get_result_with_params(&mut program, 12, 2);
+    println!("Part 1: {}", result);
+}
+
+fn part2(input_program: &Vec<usize>) {
     for noun in 0..100 {
         for verb in 0..100 {
             let mut program = input_program.clone();
-            program[1] = noun;
-            program[2] = verb;
-        
-            let mut ip = 0;
-            loop {
-                let ins = parse_ins(&program, ip);
-                let num_values = ins.num_values();
-        
-                match ins {
-                    Ins::Halt => break,
-                    Ins::Add(operands) => apply_ins(&mut program, operands, |a, b| a + b),
-                    Ins::Mul(operands) => apply_ins(&mut program, operands, |a, b| a * b),
-                }
-        
-                ip += num_values;
-            }
-            
-            let result = program[0];
+            let result = get_result_with_params(&mut program, noun, verb);
             if result == 19690720 {
-                println!("{}", 100*noun + verb);
+                println!("Part 2: {}", 100*noun + verb);
                 return;
             }
         }
     }
+}
 
+fn main() {
+    let input_str = include_str!("./input");
+    let program = input_str
+        .split(',')
+        .map(|s| { s.trim_end().parse::<usize>().unwrap() })
+        .collect::<Vec<_>>();
+
+    part1(&program);
+    part2(&program);
 }
