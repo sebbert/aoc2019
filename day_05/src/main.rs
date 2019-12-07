@@ -27,7 +27,6 @@ impl<I: Iterator<Item = isize>> IO for VM<I> {
   }
 
   fn write(&mut self, addr: Addr, value: isize) {
-    
     println!("      {:?} <- {}", addr, value);
     match addr {
       Addr::Abs(addr) => {
