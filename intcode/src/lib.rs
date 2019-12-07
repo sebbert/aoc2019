@@ -82,37 +82,49 @@ impl<I: Iterator<Item = isize>> VM<I> {
     ins
   }
 
+  pub fn step(&mut self) -> Ins {
+    let ins = self.peek_ins();
+    let mut next_ip = self.ip + ins.len();
+    trace!("[{}] {:?}", self.ip, ins);
+    match ins {
+      Ins::Add(ops) => ops.apply(self, |a, b| a + b),
+      Ins::Mul(ops) => ops.apply(self, |a, b| a * b),
+      Ins::Read(target) => {
+        let value = self.input.next().unwrap();
+        self.write(target, value);
+      }
+      Ins::Write(source) => {
+        let value = self.read(source);
+        self.output.push(value);
+      }
+      Ins::JmpTrue(ops) => {
+        if self.read(ops.test) != 0 {
+          next_ip = self.read(ops.target);
+        }
+      }
+      Ins::JmpFalse(ops) => {
+        if self.read(ops.test) == 0 {
+          next_ip = self.read(ops.target);
+        }
+      }
+      Ins::Equals(ops) => ops.apply(self, |a, b| (a == b) as isize),
+      Ins::LessThan(ops) => ops.apply(self, |a, b| (a < b) as isize),
+      Ins::Halt => {
+        // Rewind to start of halt instruction
+        next_ip = self.ip;
+      }
+    }
+    self.ip = next_ip;
+
+    ins
+  }
+
   pub fn run(mut self) -> Vec<isize> {
     loop {
-      let ins = self.peek_ins();
-      let mut next_ip = self.ip + ins.len();
-      trace!("[{}] {:?}", self.ip, ins);
-      match ins {
-        Ins::Add(ops) => ops.apply(&mut self, |a, b| a + b),
-        Ins::Mul(ops) => ops.apply(&mut self, |a, b| a * b),
-        Ins::Read(target) => {
-          let value = self.input.next().unwrap();
-          self.write(target, value);
-        }
-        Ins::Write(source) => {
-          let value = self.read(source);
-          self.output.push(value);
-        }
-        Ins::JmpTrue(ops) => {
-          if self.read(ops.test) != 0 {
-            next_ip = self.read(ops.target);
-          }
-        }
-        Ins::JmpFalse(ops) => {
-          if self.read(ops.test) == 0 {
-            next_ip = self.read(ops.target);
-          }
-        }
-        Ins::Equals(ops) => ops.apply(&mut self, |a, b| (a == b) as isize),
-        Ins::LessThan(ops) => ops.apply(&mut self, |a, b| (a < b) as isize),
-        Ins::Halt => break
+      match self.step() {
+        Ins::Halt => break,
+        _ => {}
       }
-      self.ip = next_ip;
     }
 
     self.output
