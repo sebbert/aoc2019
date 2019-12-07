@@ -163,13 +163,6 @@ impl Addr {
       _ => panic!("Invalid addressing mode: {}", mode),
     }
   }
-
-  fn expect_abs(self) -> isize {
-    match self {
-      Addr::Abs(addr) => addr,
-      _ => panic!("Expected absolute address")
-    }
-  }
 }
 
 #[derive(Debug,Copy,Clone)]
