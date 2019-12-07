@@ -4,9 +4,9 @@ use permutohedron::Heap;
 fn run_amp(program: &Vec<isize>, signal: isize, phase: isize) -> isize {
   let program = program.clone();
   let input = [phase, signal];
-  let input = input.iter().cloned();
-  let vm = VM::new(program, input);
-  *vm.run().last().unwrap()
+  let mut input = input.iter().cloned();
+  let vm = VM::new(program);
+  *vm.run(&mut input).last().unwrap()
 }
 
 fn run_amps(program: &Vec<isize>, phase_settings: &[isize]) -> isize {

@@ -5,10 +5,9 @@ use std::iter;
 use log::trace;
 
 #[derive(Debug)]
-pub struct VM<I: Iterator<Item = isize>> {
+pub struct VM {
   program: Vec<isize>,
   ip: isize,
-  input: I,
   output: Vec<isize>,
 }
 
@@ -17,7 +16,7 @@ pub trait IO {
   fn write(&mut self, addr: Addr, value: isize);
 }
 
-impl<I: Iterator<Item = isize>> IO for VM<I> {
+impl IO for VM {
   fn read(&mut self, addr: Addr) -> isize {
     let res = match addr {
       Addr::Abs(addr) => self.program[addr as usize],
@@ -38,12 +37,11 @@ impl<I: Iterator<Item = isize>> IO for VM<I> {
   }
 }
 
-impl<I: Iterator<Item = isize>> VM<I> {
-  pub fn new(program: Vec<isize>, input: impl IntoIterator<IntoIter = I, Item = isize>) -> VM<I> {
+impl VM {
+  pub fn new(program: Vec<isize>) -> VM {
     VM {
       program,
       ip: 0,
-      input: input.into_iter(),
       output: Vec::new(),
     }
   }
@@ -82,7 +80,7 @@ impl<I: Iterator<Item = isize>> VM<I> {
     ins
   }
 
-  pub fn step(&mut self) -> Ins {
+  pub fn step(&mut self, input: &mut dyn Iterator<Item = isize>) -> Ins {
     let ins = self.peek_ins();
     let mut next_ip = self.ip + ins.len();
     trace!("[{}] {:?}", self.ip, ins);
@@ -90,7 +88,7 @@ impl<I: Iterator<Item = isize>> VM<I> {
       Ins::Add(ops) => ops.apply(self, |a, b| a + b),
       Ins::Mul(ops) => ops.apply(self, |a, b| a * b),
       Ins::Read(target) => {
-        let value = self.input.next().unwrap();
+        let value = input.next().unwrap();
         self.write(target, value);
       }
       Ins::Write(source) => {
@@ -119,9 +117,9 @@ impl<I: Iterator<Item = isize>> VM<I> {
     ins
   }
 
-  pub fn run(mut self) -> Vec<isize> {
+  pub fn run(mut self, input: &mut dyn Iterator<Item = isize>) -> Vec<isize> {
     loop {
-      match self.step() {
+      match self.step(input) {
         Ins::Halt => break,
         _ => {}
       }

@@ -9,14 +9,14 @@ fn main() {
   let program = parse_program(program_src);
 
   let part1 = {
-    let vm = VM::new(program.clone(), iter::once(1));
-    vm.run()
+    let vm = VM::new(program.clone());
+    vm.run(&mut iter::once(1))
   };
   println!("Part 1: {:?}", part1);
 
   let part2 = {
-    let vm = VM::new(program.clone(), iter::once(5));
-    vm.run()
+    let vm = VM::new(program.clone());
+    vm.run(&mut iter::once(5))
   };
   println!("Part 2: {:?}", part2);
 }
