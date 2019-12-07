@@ -117,6 +117,28 @@ impl VM {
     ins
   }
 
+  pub fn run_until_next_output(&mut self, input: &mut dyn Iterator<Item = isize>) -> Option<isize> {
+    loop {
+      match self.step(input) {
+        Ins::Write(from_addr) => {
+          // Not super stoked about reading the value twice here, but it's okay for now
+          return Some(self.read(from_addr))
+        }
+        Ins::Halt => return None,
+        _ => {}
+      }
+    }
+  }
+
+  pub fn run_until_next_input(&mut self, input: &mut dyn Iterator<Item = isize>) {
+    loop {
+      match self.step(input) {
+        Ins::Read(_) | Ins::Halt => return,
+        _ => {}
+      }
+    }
+  }
+
   pub fn run(mut self, input: &mut dyn Iterator<Item = isize>) -> Vec<isize> {
     loop {
       match self.step(input) {
