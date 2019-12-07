@@ -210,13 +210,6 @@ impl JmpOps {
   }
 }
 
-fn run_and_print(program: Vec<isize>, input: isize) {
-  let input = [input];
-  let mut vm = VM::new(program.clone(), input.iter().map(|x| *x));
-  let result = vm.run();
-  println!("Result: {:?}", result);
-}
-
 fn main() {
   let input_str = include_str!("./input");
   let program = input_str
