@@ -2,6 +2,8 @@ mod digits;
 
 use digits::ReverseDigits;
 use std::iter;
+use log::trace;
+use env_logger;
 
 #[derive(Debug)]
 struct VM<I: Iterator<Item = isize>> {
@@ -22,12 +24,12 @@ impl<I: Iterator<Item = isize>> IO for VM<I> {
       Addr::Abs(addr) => self.program[addr as usize],
       Addr::Imm(value) => value
     };
-    println!("      {:?} -> {}", addr, res);
+    trace!("      {:?} -> {}", addr, res);
     res
   }
 
   fn write(&mut self, addr: Addr, value: isize) {
-    println!("      {:?} <- {}", addr, value);
+    trace!("      {:?} <- {}", addr, value);
     match addr {
       Addr::Abs(addr) => {
         self.program[addr as usize] = value;
@@ -85,7 +87,7 @@ impl<I: Iterator<Item = isize>> VM<I> {
     loop {
       let ins = self.peek_ins();
       let mut next_ip = self.ip + ins.len();
-      println!("[{}] {:?}", self.ip, ins);
+      trace!("[{}] {:?}", self.ip, ins);
       match ins {
         Ins::Add(ops) => ops.apply(&mut self, |a, b| a + b),
         Ins::Mul(ops) => ops.apply(&mut self, |a, b| a * b),
@@ -210,6 +212,8 @@ impl JmpOps {
 }
 
 fn main() {
+  env_logger::init();
+
   let input_str = include_str!("./input");
   let program = input_str
     .split(',')
