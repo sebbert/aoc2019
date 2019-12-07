@@ -225,13 +225,13 @@ fn main() {
     .collect::<Vec<_>>();
 
   let part1 = {
-    let vm = VM::new(program.clone(), [1 as isize].iter().map(|x| *x));
+    let vm = VM::new(program.clone(), [1 as isize].iter().cloned());
     vm.run()
   };
   println!("Part 1: {:?}", part1);
 
   let part2 = {
-    let vm = VM::new(program.clone(), [5 as isize].iter().map(|x| *x));
+    let vm = VM::new(program.clone(), [5 as isize].iter().cloned());
     vm.run()
   };
   println!("Part 2: {:?}", part2);
