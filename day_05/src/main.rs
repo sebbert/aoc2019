@@ -39,11 +39,11 @@ impl<I: Iterator<Item = isize>> IO for VM<I> {
 }
 
 impl<I: Iterator<Item = isize>> VM<I> {
-  fn new(program: Vec<isize>, input: I) -> VM<I> {
+  fn new(program: Vec<isize>, input: impl IntoIterator<IntoIter = I, Item = isize>) -> VM<I> {
     VM {
       program,
       ip: 0,
-      input: input,
+      input: input.into_iter(),
       output: Vec::new(),
     }
   }
