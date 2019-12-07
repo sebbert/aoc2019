@@ -4,11 +4,8 @@ use intcode::*;
 fn main() {
   env_logger::init();
 
-  let input_str = include_str!("./input");
-  let program = input_str
-    .split(',')
-    .map(|s| { s.trim_end().parse::<isize>().unwrap() })
-    .collect::<Vec<_>>();
+  let program_src = include_str!("./input");
+  let program = parse_program(program_src);
 
   let part1 = {
     let vm = VM::new(program.clone(), [1 as isize].iter().cloned());

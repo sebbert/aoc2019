@@ -202,3 +202,11 @@ impl JmpOps {
     JmpOps { test, target }
   }
 }
+
+pub fn parse_program(program_src: &str) -> Vec<isize> {
+  program_src
+    .trim_end()
+    .split(',')
+    .map(|s| { s.parse::<isize>().unwrap() })
+    .collect::<Vec<_>>()
+}
