@@ -33,19 +33,23 @@
 
 (println "Part 1:" (count-orbits "COM"))
 
-(defn search-forward [start end depth]
+(defn search-forward [start end depth visited]
   (some
     (fn [next]
       (if (= next end)
         depth
-        (search-forward next end (inc depth))))
+        (when (not (contains? visited next))
+          (search-forward next end (inc depth) visited))))
     (parent-to-children start)))
 
 (defn shortest-path-between [start end]
-  (loop [backtrack-depth 0
-         cur start]
+  (loop [cur start
+         backtrack-depth 0
+         visited (set start)]
     (when-let [parent (child-to-parent cur)]
-      (or (search-forward parent end backtrack-depth)
-          (recur (inc backtrack-depth) parent)))))
+      (or (search-forward parent end backtrack-depth visited)
+          (recur parent
+                 (inc backtrack-depth)
+                 (conj visited parent))))))
 
 (println "Part 2:" (shortest-path-between "SAN" "YOU"))
