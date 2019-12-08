@@ -24,12 +24,11 @@
 (defn count-orbits
   ([parent] (count-orbits parent 0))
   ([parent depth]
-    (let [children (or (parent-to-children parent) ())]
-      (+ depth
-        (reduce
-          (fn [acc next] (+ acc (count-orbits next (inc depth))))
-          0
-          children)))))
+    (+ depth
+      (reduce
+        (fn [acc next] (+ acc (count-orbits next (inc depth))))
+        0
+        (parent-to-children parent)))))
 
 (println "Part 1:" (count-orbits "COM"))
 
