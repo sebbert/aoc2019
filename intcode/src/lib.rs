@@ -8,6 +8,7 @@ use log::trace;
 pub struct VM {
   program: Vec<isize>,
   ip: isize,
+  relative_base: isize,
   output: Vec<isize>,
 }
 
@@ -19,7 +20,8 @@ pub trait IO {
 impl IO for VM {
   fn read(&mut self, addr: Addr) -> isize {
     let res = match addr {
-      Addr::Abs(addr) => self.program[addr as usize],
+      Addr::Abs(addr) => self.read_impl(addr as usize),
+      Addr::Rel(addr) => self.read_impl((addr + self.relative_base) as usize),
       Addr::Imm(value) => value
     };
     trace!("      {:?} -> {}", addr, res);
@@ -29,12 +31,19 @@ impl IO for VM {
   fn write(&mut self, addr: Addr, value: isize) {
     trace!("      {:?} <- {}", addr, value);
     match addr {
-      Addr::Abs(addr) => {
-        self.program[addr as usize] = value;
-      }
+      Addr::Abs(addr) => self.write_impl(to_usize_checked(addr), value),
+      Addr::Rel(addr) => self.write_impl(to_usize_checked(addr + self.relative_base), value),
       Addr::Imm(_) => panic!("Attempted to write to immediate value")
     }
   }
+}
+
+fn to_usize_checked(value: isize) -> usize {
+  if value < 0 {
+    panic!("Attempted to convert negative integer to unsigned");
+  }
+
+  value as usize
 }
 
 impl VM {
@@ -42,8 +51,24 @@ impl VM {
     VM {
       program,
       ip: 0,
+      relative_base: 0,
       output: Vec::new(),
     }
+  }
+
+  fn read_impl(&mut self, abs_addr: usize) -> isize {
+    if self.program.len() <= abs_addr {
+      0
+    } else {
+      self.program[abs_addr]
+    }
+  }
+
+  fn write_impl(&mut self, abs_addr: usize, value: isize) {
+    if self.program.len() <= abs_addr {
+      self.program.resize(abs_addr + 1, 0);
+    }
+    self.program[abs_addr] = value;
   }
 
   pub fn peek_ins(&self) -> Ins {
@@ -74,6 +99,7 @@ impl VM {
       06 => Ins::JmpFalse(JmpOps::from_iter(addr_iter)),
       07 => Ins::LessThan(Ops3::from_iter(addr_iter)),
       08 => Ins::Equals(Ops3::from_iter(addr_iter)),
+      09 => Ins::SetRelativeBase(addr_iter.next().unwrap()),
       _ => panic!("Invalid opcode: {}", opcode),
     };
 
@@ -94,6 +120,9 @@ impl VM {
       Ins::Write(source) => {
         let value = self.read(source);
         self.output.push(value);
+      }
+      Ins::SetRelativeBase(source) => {
+        self.relative_base += self.read(source);
       }
       Ins::JmpTrue(ops) => {
         if self.read(ops.test) != 0 {
@@ -157,6 +186,7 @@ pub enum Ins {
   Mul(Ops3),
   Read(Addr),
   Write(Addr),
+  SetRelativeBase(Addr),
   JmpTrue(JmpOps),
   JmpFalse(JmpOps),
   LessThan(Ops3),
@@ -173,8 +203,13 @@ impl Ins {
       | Ins::Equals(_)
       => 4,
       
-      Ins::Read(_) | Ins::Write(_) => 2,
-      Ins::JmpTrue(_) | Ins::JmpFalse(_) => 3,
+      Ins::Read(_)
+      | Ins::Write(_)
+      | Ins::SetRelativeBase(_) => 2,
+
+      Ins::JmpTrue(_)
+      | Ins::JmpFalse(_) => 3,
+
       Ins::Halt => 1,
     }
   }
@@ -184,6 +219,7 @@ impl Ins {
 pub enum Addr {
   Abs(isize),
   Imm(isize),
+  Rel(isize),
 }
 
 impl Addr {
@@ -191,6 +227,7 @@ impl Addr {
     match mode {
       0 => Addr::Abs(value),
       1 => Addr::Imm(value),
+      2 => Addr::Rel(value),
       _ => panic!("Invalid addressing mode: {}", mode),
     }
   }
